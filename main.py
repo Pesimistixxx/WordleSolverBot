@@ -17,13 +17,27 @@ def start(message):
     with open('words.txt', 'r') as file:
         words = [word for line in file for word in line.strip().split()]
     user_data[message.chat.id] = {'words': words}
-    msg = bot.send_message(message.chat.id, 'Write the word you entered in wordle (5 letters)')
+    msg = bot.send_message(message.chat.id, 'Введи слово которое ты написал в worlde (5 букв)')
     bot.register_next_step_handler(msg, process_word)
 
 
 def process_word(message):
     user_id = message.chat.id
-    user_input = message.text.strip().lower()
+
+    try:
+        user_input = message.text.strip().lower()
+    except AttributeError:
+        msg = bot.send_message(user_id, "Неподходящее слово Пожалуйста, введите слово")
+        bot.register_next_step_handler(msg, process_word)
+        return
+
+    if user_input.startswith('/'):
+        return
+
+    if not user_input.isalpha():
+        msg = bot.send_message(user_id, "Неподходящее слово Пожалуйста, введите слово из 5 букв:")
+        bot.register_next_step_handler(msg, process_word)
+        return
 
     if len(user_input) != 5:
         msg = bot.send_message(user_id, f'Введено {len(user_input)} букв. Нужно 5. Попробуйте снова:')
@@ -172,19 +186,22 @@ def handle_color_confirmation(call):
         bot.answer_callback_query(call.id, "Отлично! Результаты подтверждены")
 
         words = data['words']
+        if data['colors'].count('green') != 5 and data['word'] in words:
+            words.remove(data['word'])
+
         for i, (color, letter) in enumerate(zip(data['colors'], data['word'])):
             if color == 'grey':
-                words = [word_iter for word_iter in words if word_iter[i] != letter]
+                words = [word_iter for word_iter in words if letter not in word_iter]
             elif color == 'green':
                 words = [word_iter for word_iter in words if word_iter[i] == letter]
             elif color == 'yellow':
                 words = [word_iter for word_iter in words if letter in word_iter]
         data['words'] = words
-        if len(data['words']) < 50:
-            bot.send_message(user_id, f"Возможные слова {words}")
-        elif len(data['words']) == 0:
+        if len(data['words']) == 0:
             bot.send_message(user_id, "Такого слова не найдено, попробуйте ещё раз /start")
             return
+        elif len(data['words']) < 50:
+            bot.send_message(user_id, f"Возможные слова {str(words)[1:-1]}")
         msg = bot.send_message(user_id, f"Введи следующее слово")
         bot.register_next_step_handler(msg, process_word)
 
