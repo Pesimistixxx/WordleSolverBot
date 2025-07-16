@@ -17,7 +17,7 @@ def start(message):
     with open('words.txt', 'r') as file:
         words = [word for line in file for word in line.strip().split()]
     user_data[message.chat.id] = {'words': words}
-    msg = bot.send_message(message.chat.id, 'Введи слово которое ты написал в worlde (5 букв)')
+    msg = bot.send_message(message.chat.id, 'Введи слово которое ты написал в worlde (5 букв на английском)')
     bot.register_next_step_handler(msg, process_word)
 
 
@@ -191,6 +191,16 @@ def handle_color_confirmation(call):
 
         for i, (color, letter) in enumerate(zip(data['colors'], data['word'])):
             if color == 'grey':
+                if data['word'].count(letter) >= 2:
+                    letter_cnt = 0
+
+                    for color_i, letter_i in zip(data['colors'], data['word']):
+                        if letter_i == letter and color_i != 'grey':
+                            letter_cnt += 1
+
+                    if letter_cnt != 0:
+                        words = [word_iter for word_iter in words if word_iter.count(letter) == letter_cnt]
+                        continue
                 words = [word_iter for word_iter in words if letter not in word_iter]
             elif color == 'green':
                 words = [word_iter for word_iter in words if word_iter[i] == letter]
@@ -200,6 +210,11 @@ def handle_color_confirmation(call):
         if len(data['words']) == 0:
             bot.send_message(user_id, "Такого слова не найдено, попробуйте ещё раз /start")
             return
+        if len(data['words']) == 1:
+            bot.send_message(user_id, f"Итоговое слово: {str(words)[1:-1]} \n"
+                                      f"Рекламная пауза \n"
+                                      f"azber.ru конечно не решает wordle но тоже классное место \n"
+                                      f"@AnswerTopsBot чисто для чилла в компании троих людей")
         elif len(data['words']) < 50:
             bot.send_message(user_id, f"Возможные слова {str(words)[1:-1]}")
         msg = bot.send_message(user_id, f"Введи следующее слово")
