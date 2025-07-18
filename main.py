@@ -10,14 +10,33 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 bot = telebot.TeleBot(BOT_TOKEN)
 
 user_data = {}
+user_language = []
 
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    with open('words.txt', 'r') as file:
-        words = [word for line in file for word in line.strip().split()]
+    user_id = message.chat.id
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    english = types.KeyboardButton('English')
+    russian = types.KeyboardButton('Русский')
+    markup.add(english, russian)
+    bot.send_message(user_id, 'Выбери язык для wordle', reply_markup=markup)
+    user_language.append(user_id)
+
+
+@bot.message_handler(func=lambda message: message.from_user.id in user_language and not message.text.startswith('/'))
+def handle_wordle_language(message):
+    user_id = message.chat.id
+    if message.text == 'English':
+        with open('eng.txt', 'r') as file:
+            words = [word for line in file for word in line.strip().split()]
+    if message.text == 'Русский':
+        with open('ru.txt', 'r') as file:
+            words = [word for line in file for word in line.strip().split()]
+
+    user_language.remove(user_id)
     user_data[message.chat.id] = {'words': words}
-    msg = bot.send_message(message.chat.id, 'Введи слово которое ты написал в worlde (5 букв на английском)')
+    msg = bot.send_message(user_id, 'Введи слово которое ты написал в worlde (5 букв на английском)', reply_markup=types.ReplyKeyboardRemove())
     bot.register_next_step_handler(msg, process_word)
 
 
@@ -32,6 +51,7 @@ def process_word(message):
         return
 
     if user_input.startswith('/'):
+        start(message)
         return
 
     if not user_input.isalpha():
