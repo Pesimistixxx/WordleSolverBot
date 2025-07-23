@@ -250,4 +250,5 @@ def handle_color_confirmation(call):
         bot.answer_callback_query(call.id, "Ошибка состояния. Начните заново командой /start")
 
 
-bot.polling(non_stop=True)
+if __name__ == '__main__':
+    bot.infinity_polling()
