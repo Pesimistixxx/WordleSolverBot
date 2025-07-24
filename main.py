@@ -225,7 +225,7 @@ def handle_color_confirmation(call):
             elif color == 'green':
                 words = [word_iter for word_iter in words if word_iter[i] == letter]
             elif color == 'yellow':
-                words = [word_iter for word_iter in words if letter in word_iter]
+                words = [word_iter for word_iter in words if letter in word_iter and word_iter[i] != letter]
         data['words'] = words
         if len(data['words']) == 0:
             bot.send_message(user_id, "Такого слова не найдено, попробуйте ещё раз /start")
